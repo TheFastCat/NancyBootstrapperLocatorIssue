@@ -1,34 +1,47 @@
-OwinCors
+NancyBootstrapperLocatorIssue
 =======================================
 
-This stub project is useful for testing OWIN CORs enablement on both OWIN SystemWeb host (Website .csproj) and self-hosted via httplistener (cloud service worker role .csproj)
+This stub project is useful for reproing an issue with Nancy's BootstrapperLocator class; namely a scenario that causes a Nancy internal server error while viewing _Nancy diagnostics info.
 
-To repro:
+POSITIVE CASE REPRO:
 
-	F5 the website project (SystemWeb OWIN hosting) 
-	Use an extension against this URL: http://localhost:4444/hellonancy
-		to investigate the header composition
+	To repro:
+	
+		F5 the website project (SystemWeb OWIN hosting) 
+		From your browser navigat to /_Nancy
+		Enter the password "hi" to access Nancy's diagnostics
+		Select the "Info" image to navigate to /_Nancy/Info
+	
+	Expected: output of Nancy's diagnostics data
+	
+	Actual Result: output of Nancy's diagnostics data
 
-Expected: to see the following in the header contents:
-	Access-Control-Allow-Methods →GET, POST, OPTIONS, PUT, DELETE
-	Access-Control-Allow-Origin →*
 
-result: can see following in the header contents:
-	Access-Control-Allow-Methods →GET, POST, OPTIONS, PUT, DELETE
-	Access-Control-Allow-Origin →*
+NEGATIVE CASE REPRO:
 
-
-Now try the same thing from the Azure.CloudService.csproj (which executes the Azure.CloudService.Roles.Owin.csproj to invoke the OWIN pipeline):
-
-	F5 the Azure.CloudService project (HttpListener OWIN hosting) 
-	Use an extension against this URL: http://127.0.0.1:4444/hellonancy  (endpoint of emulated cloud service)
-		to investigate the header composition
-
-Expected: to see the following in the header contents:
-	Access-Control-Allow-Methods →GET, POST, OPTIONS, PUT, DELETE
-	Access-Control-Allow-Origin →*
-
-result: can see following in the header contents:
-	No CORs-specific headers present
+	To repro:
+	
+		within Core.CustomBootstrapper uncomment the non-default ctor taking a string as argument:
+		
+		        //public CustomBootstrapper(string str)
+		        //{
+		
+		        //}		
+	
+		within Startup.Startup : replace app.UseNancy() in order to stipulate an explicit CustomBootstrapper
+		for Nancy to use (with a ctor argument): 
+		
+			app.UseNancy(new NancyOptions() { Bootstrapper = new CustomBootstrapper(str: "hi") });
+	
+		F5 the website project (SystemWeb OWIN hosting) 
+		From your browser navigat to /_Nancy
+		Enter the password "hi" to access Nancy's diagnostics
+		Select the "Info" image to navigate to /_Nancy/Info
+	
+	Expected: output of Nancy's diagnostics data
+	
+	Actual Result: Internal server error. Firebug magic eventually shows that the BootstrapperLocator class expects a default ctor for a loaded bootstrapper.
+	
+Remarks: Nancy will function normally with an explicit Bootstrapper passed to it from OWIN that uses a non-default ctor; however _Nancy/Info will raise an internal server error 500 that is hard to track down and debug.
 
 
