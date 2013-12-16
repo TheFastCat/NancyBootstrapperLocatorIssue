@@ -40,7 +40,8 @@ NEGATIVE CASE REPRO:
 	
 	Expected: output of Nancy's diagnostics data
 	
-	Actual Result: Internal server error. Firebug magic eventually shows that the BootstrapperLocator class expects a default ctor for a loaded bootstrapper.
+	Actual Result: 
+	Internal server error. Firebug magic eventually shows that the BootstrapperLocator class expects a default ctor for a loaded bootstrapper.
 	
 Remarks: Nancy will function normally with an explicit Bootstrapper passed to it from OWIN that uses a non-default ctor; however _Nancy/Info will raise an internal server error 500 that is hard to track down and debug.
 
